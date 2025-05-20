@@ -1,193 +1,160 @@
-﻿using OpenHardwareMonitor.Hardware;
+﻿using System;
+using System.Threading;
+using LibreHardwareMonitor.Hardware;
+
 internal class Program
 {
-    //menu and input
-    private static void Main(string[] args)
+    static void Main(string[] args)
     {
-        string choice;
-        string[] choices = { "Show index", "Check value", "Exit" };
-
-        Computer computer = new Computer();
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(0/7)");
-        computer.Open();
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(1/7)");
-        computer.CPUEnabled = true;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(2/7)");
-        computer.GPUEnabled = true;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(3/7)");
-        computer.RAMEnabled = true;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(4/7)");
-        computer.HDDEnabled = true;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(5/7)");
-        computer.MainboardEnabled = true;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(6/7)");
-        computer.FanControllerEnabled = true;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write("Loading...(7/7)");
-        Console.WriteLine();
-
-        Console.Clear();
-
-
-        do
+        Computer computer = new Computer
         {
-            //show menu
-            for (var i = 0; i < choices.Length; i++)
+            IsCpuEnabled = true,
+            IsGpuEnabled = true,
+            IsMemoryEnabled = true,
+            IsStorageEnabled = true,
+            IsMotherboardEnabled = true,
+            IsControllerEnabled = true
+        };
+
+        computer.Open();
+
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("Was möchtest du ansehen?");
+            Console.WriteLine("1) CPU Temperatur (Tctl/Tdie)");
+            Console.WriteLine("2) RAM Nutzung");
+            Console.WriteLine("3) GPU Temperatur");
+            Console.WriteLine("4) Alle Sensoren anzeigen");
+            Console.WriteLine("5) Beenden");
+            Console.Write("Deine Wahl: ");
+            string input = Console.ReadLine() ?? ""; // Warnung vermeiden
+
+            if (input == "1")
             {
-                Console.WriteLine($"{i + 1} ) {choices[i]} ");
+                int temp = GetCpuTctlTdie(computer);
+                if (temp == int.MinValue)
+                    Console.WriteLine("CPU-Temperatur nicht gefunden!");
+                else
+                    Console.WriteLine($"CPU Temperatur (Tctl/Tdie): {temp} °C");
             }
-            //input number
-            do
+            else if (input == "2")
             {
-                Console.Write($"Enter number (1-{choices.Length}) : ");
-                choice = Console.ReadLine() + "";
+                PrintRamUsage(computer);
             }
-            while (!checkInput(choice, choices.Length));
-            if (choices[Convert.ToInt32(choice) - 1] == "Show index")
+            else if (input == "3")
             {
-                showIndex(computer);
+                PrintGpuTemp(computer);
             }
-            if (choices[Convert.ToInt32(choice) - 1] == "Check value")
+            else if (input == "4")
             {
-                checkValue(computer);
+                PrintAllSensors(computer);
             }
-            if (choices[Convert.ToInt32(choice) - 1] != "Exit")
+            else if (input == "5")
             {
-                Console.WriteLine("Press <Enter> to Continue");
-                Console.ReadLine();
-                Console.Clear();
+                break;
             }
+            else
+            {
+                Console.WriteLine("Ungültige Eingabe!");
+            }
+
+            Console.WriteLine("\nWeiter mit <Enter>...");
+            Console.ReadLine();
         }
-        while (choices[Convert.ToInt32(choice) - 1] != "Exit");
+
+        computer.Close();
     }
 
-    private static void checkValue(Computer computer)
+    // CPU Temperatur (Tctl/Tdie)
+    static int GetCpuTctlTdie(Computer computer)
     {
-        string hardwareChoice;
-        string sensorChoice;
-        List<string> hardwareChoices = new List<string>();
-        List<string> sensorName = new List<string>();
-        List<string> sensorType = new List<string>();
-        Console.Clear();
-        // show hardwares
-        Console.WriteLine("Hardware : ");
         foreach (var hardware in computer.Hardware)
         {
-            hardwareChoices.Add(hardware.Name);
-            Console.WriteLine($"{hardwareChoices.Count} ) {hardware.Name}");
-
-        }
-        hardwareChoices.Add("Exit");
-        Console.WriteLine($"{hardwareChoices.Count} ) Exit");
-        // choose hardware
-        do
-        {
-            Console.Write($"Enter number (1-{hardwareChoices.Count}) : ");
-            hardwareChoice = Console.ReadLine() + "";
-        }
-        while (!checkInput(hardwareChoice, hardwareChoices.Count));
-        if (Convert.ToInt32(hardwareChoice) != hardwareChoices.Count)
-        {
-            // show sensors
-            Console.Clear();
-            Console.WriteLine("Sensor :");
-            foreach (var hardware in computer.Hardware)
+            if (hardware.HardwareType == HardwareType.Cpu)
             {
-                if (hardware.Name == hardwareChoices[Convert.ToInt32(hardwareChoice) - 1])
+                hardware.Update();
+                foreach (var sensor in hardware.Sensors)
                 {
-                    foreach (var sensor in hardware.Sensors)
+                    if (sensor.SensorType == SensorType.Temperature &&
+                        sensor.Name == "Core (Tctl/Tdie)")
                     {
-                        sensorName.Add(sensor.Name);
-                        sensorType.Add(sensor.SensorType.ToString());
-                        Console.WriteLine($"{sensorName.Count} ) {sensor.Name} - {sensor.SensorType}");
-                    }
-                    sensorName.Add("Exit");
-                    Console.WriteLine($"{sensorName.Count} ) Exit");
-                    // choose sensor
-                    do
-                    {
-                        Console.Write($"Enter number (1-{sensorName.Count}) : ");
-                        sensorChoice = Console.ReadLine() + "";
-                    }
-                    while (!checkInput(sensorChoice, sensorName.Count));
-                    if (Convert.ToInt32(sensorChoice) != sensorName.Count)
-                    {
-                        foreach (var sensor in hardware.Sensors)
-                        {
-                            if (sensor.Name == sensorName[Convert.ToInt32(sensorChoice) - 1] && sensor.SensorType.ToString() == sensorType[Convert.ToInt32(sensorChoice) - 1])
-                            {
-                                bool running = true;
-                                Console.Clear();
-                                Console.WriteLine($"Hardware : {hardware.Name}");
-                                Console.WriteLine($"Sensor : {sensor.Name} - {sensor.SensorType}");
-                                Console.SetCursorPosition(0, 5);
-                                Console.WriteLine("Press <Enter> to STOP");
-                                Thread displayStatus = new Thread(delegate ()
-                                {
-                                    while (running)
-                                    {
-                                        hardware.Update();
-                                        Console.SetCursorPosition(0, 3);
-                                        Console.Write(new string(' ', Console.BufferWidth));
-                                        Console.SetCursorPosition(0, 3);
-                                        Console.Write($"Value : {sensor.Value} (MAX : {sensor.Max} MIN : {sensor.Min})");
-                                        Thread.Sleep(1000);
-                                    }
-                                });
-                                displayStatus.IsBackground = true;
-                                displayStatus.Start();
-                                Console.ReadLine();
-                                running = false;
-                                Console.SetCursorPosition(0, 6);
-                            }
-                        }
-
+                        var value = sensor.Value;
+                        if (value.HasValue)
+                            return (int)Math.Round(value.Value);
                     }
                 }
             }
         }
-    }
-    private static bool checkInput(string input, int choicesNum)
-    {
-        List<string> choices = new List<string>();
-        for (int i = 0; i < choicesNum; i++)
-        {
-            choices.Add((i + 1).ToString());
-        }
-        if (choices.Contains(input))
-        {
-            return true;
-        }
-        return false;
+        return int.MinValue;
     }
 
-    private static void showIndex(Computer computer)
+    // RAM-Nutzung anzeigen
+    static void PrintRamUsage(Computer computer)
     {
-        Console.Clear();
         foreach (var hardware in computer.Hardware)
         {
-            Console.Write(hardware.HardwareType.ToString());
-
-            if (hardware.Name != null)
+            if (hardware.HardwareType == HardwareType.Memory)
             {
-                Console.Write(" : " + hardware.Name.ToString());
+                hardware.Update();
+                float? used = null;
+                float? available = null;
+                foreach (var sensor in hardware.Sensors)
+                {
+                    if (sensor.Name == "Memory Used" && sensor.Value.HasValue)
+                        used = sensor.Value;
+                    if (sensor.Name == "Memory Available" && sensor.Value.HasValue)
+                        available = sensor.Value;
+                }
+
+                if (used != null && available != null)
+                {
+                    Console.WriteLine($"RAM benutzt: {used:F0} MB");
+                    Console.WriteLine($"RAM verfügbar: {available:F0} MB");
+                }
+                else
+                {
+                    Console.WriteLine("RAM-Daten nicht gefunden!");
+                }
             }
-            Console.WriteLine();
+        }
+    }
+
+    // GPU Temperatur anzeigen (nur NVIDIA)
+    static void PrintGpuTemp(Computer computer)
+    {
+        foreach (var hardware in computer.Hardware)
+        {
+            if (hardware.HardwareType == HardwareType.GpuNvidia)
+            {
+                hardware.Update();
+                foreach (var sensor in hardware.Sensors)
+                {
+                    if (sensor.SensorType == SensorType.Temperature &&
+                        sensor.Name == "GPU Core" &&
+                        sensor.Value.HasValue)
+                    {
+                        Console.WriteLine($"GPU Temperatur: {sensor.Value.Value:F1} °C");
+                        return;
+                    }
+                }
+            }
+        }
+        Console.WriteLine("GPU Temperatur nicht gefunden!");
+    }
+
+    // Alle Sensoren und Werte auflisten
+    static void PrintAllSensors(Computer computer)
+    {
+        Console.WriteLine("Alle erkannten Sensoren:");
+        foreach (var hardware in computer.Hardware)
+        {
+            hardware.Update();
+            Console.WriteLine($"{hardware.HardwareType}: {hardware.Name}");
             foreach (var sensor in hardware.Sensors)
             {
-                if (sensor.Name != null)
-                {
-                    Console.Write("   | " + sensor.Name.ToString());
-                }
-                Console.Write(" [" + sensor.SensorType.ToString() + "]");
-                Console.WriteLine();
+                if (sensor.Value.HasValue)
+                    Console.WriteLine($"   {sensor.Name} [{sensor.SensorType}]: {sensor.Value.Value} {(sensor.SensorType == SensorType.Temperature ? "°C" : "")}");
             }
         }
     }

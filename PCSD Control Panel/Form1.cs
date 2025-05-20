@@ -1,5 +1,5 @@
+using LibreHardwareMonitor.Hardware;
 using Microsoft.Win32.TaskScheduler;
-using OpenHardwareMonitor.Hardware;
 using System.Diagnostics;
 using System.IO.Ports;
 
@@ -16,15 +16,20 @@ namespace PCSD_Control_Panel_2._0
         Point offset;
         Point original;
 
-        // OpenHardwareMonitor
-        private static Computer? myComputer;
+        // LibreHardwareMonitor
+        private static Computer myComputer = new Computer
+        {
+            IsCpuEnabled = true,
+            IsGpuEnabled = true
+        };
 
         // CPU/GPU temperature/usage
         private static int cpuTemp;
         private static int gpuTemp;
         private static int cpuUsage;
         private static int gpuUsage;
-
+        private static int ramUsed;
+        private static int ramTotal;
 
         // USB Display
         private object[] buadRateSet = { 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200, 230400, 250000, 500000, 1000000, 2000000 };
@@ -43,10 +48,7 @@ namespace PCSD_Control_Panel_2._0
             InitializeComponent();
 
             // Initialize computer object and enable CPU and GPU sensors
-            myComputer = new Computer();
             myComputer.Open();
-            myComputer.CPUEnabled = true;
-            myComputer.GPUEnabled = true;
 
             //start to get status
             getStatus.IsBackground = true;
@@ -264,6 +266,7 @@ namespace PCSD_Control_Panel_2._0
                     gpuTemp = gpuTempTmp;
                     cpuUsage = cpuUsageTmp;
                     gpuUsage = gpuUsageTmp;
+                    UpdateRam();
                     Thread.Sleep(Properties.Settings.Default.update_speed);
                 }
             }
@@ -295,12 +298,13 @@ namespace PCSD_Control_Panel_2._0
             {
                 try
                 {
-                    String cpuTempText, cpuUsageText, gpuTempText, gpuUsageText;
-                    cpuTempText = 1000 + cpuTemp + "";
-                    cpuUsageText = 1000 + cpuUsage + "";
-                    gpuTempText = 1000 + gpuTemp + "";
-                    gpuUsageText = 1000 + gpuUsage + "";
-                    port.Write(cpuTempText + cpuUsageText + gpuTempText + gpuUsageText);
+                    string cpuTempText = cpuTemp.ToString("D3");
+                    string cpuUsageText = cpuUsage.ToString("D3");
+                    string gpuTempText = gpuTemp.ToString("D3");
+                    string gpuUsageText = gpuUsage.ToString("D3");
+                    string ramUsedText = ramUsed.ToString("D5");
+                    string ramTotalText = ramTotal.ToString("D5");
+                    port.Write(cpuTempText + cpuUsageText + gpuTempText + gpuUsageText + ramUsedText + ramTotalText);
                 }
                 catch (Exception ex)
                 {
@@ -311,24 +315,22 @@ namespace PCSD_Control_Panel_2._0
                 Thread.Sleep(Properties.Settings.Default.update_speed);
             }
             port.Close();
-
         }
         // Get value
         private static int GetCPUTemp()
         {
             foreach (var hardware in myComputer.Hardware)
             {
-                if (hardware.HardwareType == HardwareType.CPU)
+                if (hardware.HardwareType == HardwareType.Cpu)
                 {
+                    hardware.Update();
                     foreach (var sensor in hardware.Sensors)
                     {
-                        if (sensor.Name == "CPU Package" && sensor.SensorType == SensorType.Temperature)
+                        if (sensor.SensorType == SensorType.Temperature &&
+                            sensor.Name == "Core (Tctl/Tdie)" &&
+                            sensor.Value.HasValue)
                         {
-                            hardware.Update();
-                            if (sensor.Value != null)
-                            {
-                                return ((int)sensor.Value);
-                            }
+                            return (int)Math.Round(sensor.Value.Value);
                         }
                     }
                 }
@@ -339,7 +341,7 @@ namespace PCSD_Control_Panel_2._0
         {
             foreach (var hardware in myComputer.Hardware)
             {
-                if (hardware.HardwareType == HardwareType.GpuNvidia || hardware.HardwareType == HardwareType.GpuAti)
+                if (hardware.HardwareType == HardwareType.GpuNvidia || hardware.HardwareType == HardwareType.GpuAmd)
                 {
                     foreach (var sensor in hardware.Sensors)
                     {
@@ -360,7 +362,7 @@ namespace PCSD_Control_Panel_2._0
         {
             foreach (var hardware in myComputer.Hardware)
             {
-                if (hardware.HardwareType == HardwareType.CPU)
+                if (hardware.HardwareType == HardwareType.Cpu)
                 {
                     foreach (var sensor in hardware.Sensors)
                     {
@@ -381,7 +383,7 @@ namespace PCSD_Control_Panel_2._0
         {
             foreach (var hardware in myComputer.Hardware)
             {
-                if (hardware.HardwareType == HardwareType.GpuNvidia || hardware.HardwareType == HardwareType.GpuAti)
+                if (hardware.HardwareType == HardwareType.GpuNvidia || hardware.HardwareType == HardwareType.GpuAmd)
                 {
                     foreach (var sensor in hardware.Sensors)
                     {
@@ -398,7 +400,30 @@ namespace PCSD_Control_Panel_2._0
             }
             return 0;
         }
-
+        private static void UpdateRam()
+        {
+            foreach (var hardware in myComputer.Hardware)
+            {
+                if (hardware.HardwareType == HardwareType.Memory)
+                {
+                    hardware.Update();
+                    float? used = null;
+                    float? available = null;
+                    foreach (var sensor in hardware.Sensors)
+                    {
+                        if (sensor.Name == "Memory Used" && sensor.Value.HasValue)
+                            used = sensor.Value;
+                        if (sensor.Name == "Memory Available" && sensor.Value.HasValue)
+                            available = sensor.Value;
+                    }
+                    if (used != null && available != null)
+                    {
+                        ramUsed = (int)used.Value;
+                        ramTotal = (int)(used.Value + available.Value);
+                    }
+                }
+            }
+        }
         //menu button
         private void button3_Click(object sender, EventArgs e)
         {
@@ -429,11 +454,11 @@ namespace PCSD_Control_Panel_2._0
             Process.Start("Console.exe");
         }
         // update static in system page
-        private void timer1_Tick(object sender, EventArgs e)
+        private void timer1_Tick(object? sender, EventArgs e)
         {
 
-            label5.Text = $"{cpuTemp} ¢XC";
-            label6.Text = $"{gpuTemp} ¢XC";
+            label5.Text = $"{cpuTemp} °C";
+            label6.Text = $"{gpuTemp} °C";
             label8.Text = $"{cpuUsage} %";
             label7.Text = $"{gpuUsage} %";
         }
@@ -488,7 +513,7 @@ namespace PCSD_Control_Panel_2._0
         }
 
         // keep checking
-        private void timer2_Tick(object sender, EventArgs e)
+        private void timer2_Tick(object? sender, EventArgs e)
         {
             if (Properties.Settings.Default.status)
             {
