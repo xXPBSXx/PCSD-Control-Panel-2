@@ -21,6 +21,7 @@ This is useful if the original version does not show temperatures or usage corre
 * `console/console.csproj` – updated project file
 * `PCSD Control Panel/Form1.cs` – updated UI and logic
 * `PCSD Control Panel/PCSD Control Panel.csproj` – updated project file
+* `ESP32-SSD1306/` – folder with Arduino `.ino` examples
 
 ---
 
@@ -51,9 +52,50 @@ Choose the version that fits your setup:
 
 * Clock and animation only
 * Clock and animation with PC info
+* Clock and animation with PC info (Old)
 * PC info only
 
-**Important:** For both clock versions, make sure to adjust the `// WiFi credentials` section in the Arduino code. If the credentials are not set correctly, the displays will remain black.
+**Important:** For all clock versions, make sure to adjust the `// WiFi credentials` section in the Arduino code. If the credentials are not set correctly, the displays will remain black.
+
+**Baud Rate Warning:**
+Make sure the baud rate in your Arduino code matches the one in the PCSD Control Panel (e.g. `115200`). Otherwise, data won't be read properly.
+
+**Timezone Warning:**
+Set the correct timezone in the Arduino code by adjusting the `#define TZ_INFO` value. Example for Central European Time:
+
+```cpp
+#define TZ_INFO "CET-1CEST,M3.5.0/2,M10.5.0/3"
+```
+More time zones can be found here:
+[https://github.com/nayarsystems/posix\_tz\_db/blob/master/zones.csv](https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv)
+
+---
+
+## Arduino Code Descriptions
+
+Inside the `ESP32-SSD1306` folder you'll find multiple `.ino` files:
+
+### Clock\_Rocket\_Only.ino
+
+* Displays current hour and minute on two OLEDs
+* Includes simple rocket animation
+* No PC connection required
+
+### Clock\_Rocket\_PC\_Info.ino
+
+* Same as above, but also displays CPU, GPU, and RAM usage
+* Works with **modified PCSD (LibreHardwareMonitorLib)** only
+
+### Clock\_Rocket\_PC\_Info\_Old.ino
+
+* Displays clock, rocket animation, and CPU & GPU info (no RAM)
+* Designed for **original PCSD (OpenHardwareMonitorLibCore)**
+* Use this if you're using the unmodified version from the official repo
+
+### PC\_Info\_Only.ino
+
+* Only shows CPU, GPU and RAM info
+* No clock or animations
 
 ---
 
