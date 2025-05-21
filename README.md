@@ -89,7 +89,7 @@ Inside the `ESP32-SSD1306` folder you'll find multiple `.ino` files:
 ### Clock\_Rocket\_PC\_Info\_Old.ino
 
 * Displays clock, rocket animation, and CPU & GPU info (no RAM)
-* Designed for **original PCSD (OpenHardwareMonitorLibCore)**
+* Works with **original PCSD (OpenHardwareMonitorLibCore)** only
 * Use this if you're using the unmodified version from the official repo
 
 ### PC\_Info\_Only.ino
