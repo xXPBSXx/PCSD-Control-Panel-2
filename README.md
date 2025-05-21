@@ -58,7 +58,7 @@ Choose the version that fits your setup:
 **Important:** For all clock versions, make sure to adjust the `// WiFi credentials` section in the Arduino code. If the credentials are not set correctly, the displays will remain black.
 
 **Baud Rate Warning:**
-Make sure the baud rate in your Arduino code matches the one in the PCSD Control Panel (e.g. `115200`). Otherwise, data won't be read properly.
+Make sure to set the correct baud rate in your Arduino code depending on the device and configuration you're using (e.g. 115200 for ESP32). This must also match the value set in the PCSD Control Panel. If they don't match, data transfer won't work properly. (e.g. 115200). Otherwise, data won't be read properly.
 
 **Timezone Warning:**
 Set the correct timezone in the Arduino code by adjusting the `#define TZ_INFO` value. Example for Central European Time:
