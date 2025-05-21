@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "FreeSansBold16pt7b.h" 
+#include <Fonts/FreeSansBold18pt7b.h>
 
 // WiFi credentials
 const char* ssid = ""; //WiFi Name
@@ -22,14 +22,10 @@ const char* password = ""; //WiFi Password
 Adafruit_SSD1306 screen1(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 Adafruit_SSD1306 screen2(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-
 int cpuTemp  = 0;
 int cpuUsage = 0;
 int gpuTemp  = 0;
 int gpuUsage = 0;
-int ramUsed = 0;
-int ramTotal = 0;
-
 
 struct Star {
   int x;
@@ -91,7 +87,7 @@ void updateRocket(Rocket &rocket) {
   if (rocket.x > rocket.baseX + ROCKET_FIELD_WIDTH / 2 || rocket.x < rocket.baseX - ROCKET_FIELD_WIDTH / 2) {
     rocket.vibrationDirectionX *= -1;
   }
-  
+ 
   if (rocket.y > rocket.baseY + ROCKET_FIELD_HEIGHT / 2 || rocket.y < rocket.baseY - ROCKET_FIELD_HEIGHT / 2) {
     rocket.vibrationDirectionY *= -1;
   }
@@ -130,18 +126,18 @@ void drawFirework(Adafruit_SSD1306 &display) {
 }
 
 
-const int serialBufLen = 24; 
+const int serialBufLen = 24;
 char serialBuf[serialBufLen];
 byte serialPos = 0;
 
 void checkSerial() {
   while (Serial.available()) {
     char c = Serial.read();
-    if (serialPos < 22) { 
+    if (serialPos < 16) {
       serialBuf[serialPos++] = c;
     }
-    if (serialPos == 22) { 
-      serialBuf[serialPos] = '\0';
+    if (serialPos == 16) { 
+      serialBuf[serialPos] = '\0'; 
       parseSensorData(serialBuf);
       serialPos = 0;
     }
@@ -150,12 +146,10 @@ void checkSerial() {
 
 void parseSensorData(const char* buf) {
   String staticData = String(buf);
-  cpuTemp  = staticData.substring(0,3).toInt();
-  cpuUsage = staticData.substring(3,6).toInt();
-  gpuTemp  = staticData.substring(6,9).toInt();
-  gpuUsage = staticData.substring(9,12).toInt();
-  ramUsed  = staticData.substring(12,17).toInt();
-  ramTotal = staticData.substring(17,22).toInt();
+  cpuTemp  = staticData.substring(1,4).toInt();
+  cpuUsage = staticData.substring(5,8).toInt();
+  gpuTemp  = staticData.substring(9,12).toInt();
+  gpuUsage = staticData.substring(13,16).toInt();
 }
 
 
@@ -216,9 +210,9 @@ void loop() {
     String cpuInfo = "CPU: " + String(cpuTemp) + (char)247 + "C  " + String(cpuUsage) + "%";
     String gpuInfo = "GPU: " + String(gpuTemp) + (char)247 + "C  " + String(gpuUsage) + "%";
 
-   
-    screen1.setFont(&FreeSansBold16pt7b);
-    screen2.setFont(&FreeSansBold16pt7b);
+    
+    screen1.setFont(&FreeSansBold18pt7b);
+    screen2.setFont(&FreeSansBold18pt7b);
 
     
     int visibleHeight = SCREEN_HEIGHT - 12;
@@ -229,9 +223,9 @@ void loop() {
       drawFirework(screen1);
       drawFirework(screen2);
     } else {
-     
+      
       screen1.clearDisplay();
-	  
+      
       for (int i = 0; i < STAR_COUNT; i++) {
         if (stars[i].y < visibleHeight) screen1.drawPixel(stars[i].x, stars[i].y, SSD1306_WHITE);
       }
@@ -243,28 +237,20 @@ void loop() {
       int16_t x1, y1;
       uint16_t w, h;
       screen1.getTextBounds(hoursStr, 0, 0, &x1, &y1, &w, &h);
-      screen1.setCursor((SCREEN_WIDTH - w) / 2, (visibleHeight - h) / 2 - y1 + 4);
+      screen1.setCursor((SCREEN_WIDTH - w) / 2, (visibleHeight - h) / 2 - y1 + 8);
       screen1.setTextColor(SSD1306_WHITE);
       screen1.print(hoursStr);
 
-      
+     
       screen1.setFont(); 
       int cpuW = textWidth(screen1, cpuInfo);
       int cpuX = (SCREEN_WIDTH - cpuW) / 2;
-      screen1.setCursor(cpuX, SCREEN_HEIGHT - 18);
+      screen1.setCursor(cpuX, SCREEN_HEIGHT - 8);
       screen1.print(cpuInfo);
-      float ramUsedGB = ramUsed / 1024.0;
-      float ramTotalGB = ramTotal / 1024.0;
-      String ramInfo = String(ramUsedGB, 2) + "GB/" + String(ramTotalGB, 2) + "GB";
-
-
-      screen1.setCursor(0, SCREEN_HEIGHT - 8);
-      screen1.print("RAM: ");
-      screen1.print(ramInfo);
 
       screen1.display();
 
-    
+     
       screen2.clearDisplay();
       for (int i = 0; i < STAR_COUNT; i++) {
         if (stars[i].y < visibleHeight) screen2.drawPixel(stars[i].x, stars[i].y, SSD1306_WHITE);
@@ -274,14 +260,14 @@ void loop() {
 
       String minutesStr = (minutes < 10) ? "0" + String(minutes) : String(minutes);
       screen2.getTextBounds(minutesStr, 0, 0, &x1, &y1, &w, &h);
-      screen2.setCursor((SCREEN_WIDTH - w) / 2, (visibleHeight - h) / 2 - y1 + 4);
+      screen2.setCursor((SCREEN_WIDTH - w) / 2, (visibleHeight - h) / 2 - y1 + 8);
       screen2.setTextColor(SSD1306_WHITE);
       screen2.print(minutesStr);
 
       screen2.setFont();
       int gpuW = textWidth(screen2, gpuInfo);
       int gpuX = (SCREEN_WIDTH - gpuW) / 2;
-      screen2.setCursor(gpuX, SCREEN_HEIGHT - 12);
+      screen2.setCursor(gpuX, SCREEN_HEIGHT - 8);
       screen2.print(gpuInfo);
 
       screen2.display();

@@ -8,7 +8,7 @@
 const char* ssid = ""; //WiFi Name
 const char* password = ""; //WiFi Password
 
-// Set time Zone
+// Set Time Zone
 #define TZ_INFO "CET-1CEST,M3.5.0/2,M10.5.0/3"
 
 // Screen settings
@@ -125,7 +125,7 @@ void drawFirework(Adafruit_SSD1306 &display) {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); //Set Baud rate
 
   WiFi.begin(ssid, password);
   Serial.print("Verbinde mit WLAN");

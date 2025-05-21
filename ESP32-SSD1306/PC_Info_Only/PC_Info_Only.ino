@@ -24,7 +24,7 @@ int prevRamUsed = -1;
 int prevRamTotal = -1;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); //Set Baud rate
   Wire.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
