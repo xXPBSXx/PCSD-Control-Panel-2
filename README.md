@@ -16,12 +16,12 @@ This is useful if the original version does not show temperatures or usage corre
 
 ## Included files
 
-* `PCSD Control Panel 2.0.sln` – solution file
-* `console/Program.cs` – modified to use LibreHardwareMonitor
-* `console/console.csproj` – updated project file
-* `PCSD Control Panel/Form1.cs` – updated UI and logic
-* `PCSD Control Panel/PCSD Control Panel.csproj` – updated project file
-* `ESP32-SSD1306/` – folder with Arduino `.ino` examples
+* `PCSD Control Panel 2.0.sln` - solution file
+* `console/Program.cs` - modified to use LibreHardwareMonitor
+* `console/console.csproj` - updated project file
+* `PCSD Control Panel/Form1.cs` - updated UI and logic
+* `PCSD Control Panel/PCSD Control Panel.csproj` - updated project file
+* `ESP32-SSD1306/` - folder with Arduino `.ino` examples
 
 ---
 
